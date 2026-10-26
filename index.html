@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Monthly Salah Tracker</title>
+<style>
+:root{--bg:#21140f;--panel:#2c1b14;--line:#6f4a35;--cream:#f8ead8;--muted:#c8aa8c;--caramel:#d9a36f;--gold:#f0c99a}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% 0%,#67442d 0%,#332016 38%,#1b100c 78%);color:var(--cream);font-family:Georgia,'Times New Roman',serif;min-height:100vh;padding:18px 10px 35px}.wrap{max-width:900px;margin:auto}header{text-align:center;padding:18px 8px 22px}.kicker{letter-spacing:.23em;text-transform:uppercase;color:var(--gold);font:11px Arial,sans-serif}h1{font-weight:normal;font-size:clamp(28px,5vw,44px);margin:12px 0 8px}.sub{color:var(--muted);font:13px Arial,sans-serif}.controls,.actions{display:flex;gap:9px;justify-content:center;align-items:center;flex-wrap:wrap;margin:12px 0 18px}select,button{border:1px solid var(--line);background:#302016;color:var(--cream);border-radius:9px;padding:10px 12px;font:14px Arial,sans-serif}button{cursor:pointer}button:hover{border-color:var(--caramel)}.card{background:rgba(35,21,15,.82);border:1px solid var(--line);border-radius:14px;padding:15px;margin-bottom:16px}.top{display:flex;justify-content:space-between;align-items:center;gap:10px;color:var(--muted);font:13px Arial,sans-serif}.top strong{font-size:20px;color:var(--gold)}.bar{height:7px;border-radius:20px;background:#493022;overflow:hidden;margin-top:12px}.fill{height:100%;width:0;background:linear-gradient(90deg,#b77c4d,#f0c99a);transition:width .2s}.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:13px;background:rgba(35,21,15,.88)}table{width:100%;border-collapse:collapse;min-width:560px}th{background:#382419;color:var(--gold);font:11px Arial,sans-serif;letter-spacing:.04em;text-transform:uppercase;padding:12px 5px}td{text-align:center;padding:8px 5px;border-top:1px solid rgba(111,74,53,.48)}td:first-child{text-align:left;padding-left:13px;color:var(--muted);font:13px Arial,sans-serif}input[type=checkbox]{appearance:none;width:23px;height:23px;border:1px solid #9b7558;border-radius:7px;background:#21140f;cursor:pointer;display:inline-grid;place-content:center;margin:0}input[type=checkbox]:checked{background:var(--caramel);border-color:var(--gold)}input[type=checkbox]:checked:after{content:"✓";color:#25160f;font:bold 17px Arial,sans-serif}.note,.small{color:var(--muted);font:12px/1.5 Arial,sans-serif;text-align:center}.note{margin:17px 2px 0}.small{margin-top:10px}@media(max-width:520px){body{padding:8px 7px 25px}header{padding-top:12px}.card{padding:12px}th{padding:10px 4px}td{padding:7px 3px}}@media print{body{background:white;color:#21140f}.card,.table-wrap{background:white}.controls,.actions{display:none}}
+</style>
+</head>
+<body><main class="wrap">
+<header><div class="kicker">A gentle daily reminder</div><h1>Monthly Salah Tracker</h1><div class="sub">One prayer at a time · One day at a time</div></header>
+<div class="controls"><label for="month">Month</label><select id="month" aria-label="Month"></select><label for="year">Year</label><select id="year" aria-label="Year"></select><button id="clear">Clear this month</button></div>
+<section class="card"><div class="top"><span id="label">Monthly progress</span><strong id="percent">0%</strong></div><div class="bar"><div class="fill" id="fill"></div></div><div class="small" id="count">0 prayers marked</div></section>
+<div class="table-wrap"><table><thead><tr><th>Day</th><th>Fajr</th><th>Dhuhr</th><th>Asr</th><th>Maghrib</th><th>Isha</th></tr></thead><tbody id="rows"></tbody></table></div>
+<div class="actions"><button id="export">Export backup</button><button id="import">Import backup</button><button id="print">Print</button><input id="file" type="file" accept="application/json" hidden></div>
+<p class="note">Your ticks save in this browser on this device. Export a backup before changing devices or clearing browser data.</p>
+</main>
+<script>
+const $=id=>document.getElementById(id),names=['January','February','March','April','May','June','July','August','September','October','November','December'],prayers=['Fajr','Dhuhr','Asr','Maghrib','Isha'],now=new Date();
+names.forEach((m,i)=>{let o=document.createElement('option');o.value=i;o.textContent=m;$('month').append(o)});
+for(let y=now.getFullYear()-2;y<=now.getFullYear()+5;y++){let o=document.createElement('option');o.value=y;o.textContent=y;$('year').append(o)}
+$('month').value=now.getMonth();$('year').value=now.getFullYear();
+const key=()=>`salah-tracker-${$('year').value}-${String(Number($('month').value)+1).padStart(2,'0')}`;
+const read=()=>{try{return JSON.parse(localStorage.getItem(key())||'{}')}catch(e){return {}}};
+function progress(){let data=read(),days=new Date(+$('year').value,+$('month').value+1,0).getDate(),done=0;for(let d=1;d<=days;d++)for(let p of prayers)if(data[d]?.[p])done++;let total=days*5,pct=Math.round(done/total*100);$('percent').textContent=pct+'%';$('fill').style.width=pct+'%';$('count').textContent=`${done} of ${total} prayers marked`;$('label').textContent=`${names[+$('month').value]} ${$('year').value} progress`}
+function render(){let days=new Date(+$('year').value,+$('month').value+1,0).getDate(),data=read();$('rows').innerHTML='';for(let d=1;d<=days;d++){let tr=document.createElement('tr'),td=document.createElement('td');td.textContent=String(d).padStart(2,'0');tr.append(td);for(let p of prayers){let cell=document.createElement('td'),cb=document.createElement('input');cb.type='checkbox';cb.setAttribute('aria-label',`${p}, day ${d}`);cb.checked=!!data[d]?.[p];cb.addEventListener('change',()=>{let latest=read();latest[d]??={};latest[d][p]=cb.checked;localStorage.setItem(key(),JSON.stringify(latest));progress()});cell.append(cb);tr.append(cell)}$('rows').append(tr)}progress()}
+$('month').addEventListener('change',render);$('year').addEventListener('change',render);
+$('clear').addEventListener('click',()=>{if(confirm('Clear all ticks for this month?')){localStorage.removeItem(key());render()}});
+$('export').addEventListener('click',()=>{let blob=new Blob([JSON.stringify({month:$('month').value,year:$('year').value,data:read()},null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`salah-tracker-${$('year').value}-${Number($('month').value)+1}.json`;a.click();URL.revokeObjectURL(a.href)});
+$('import').addEventListener('click',()=>$('file').click());
+$('file').addEventListener('change',async e=>{let f=e.target.files[0];if(!f)return;try{let backup=JSON.parse(await f.text());if(!backup.data)throw Error();$('month').value=backup.month;$('year').value=backup.year;localStorage.setItem(key(),JSON.stringify(backup.data));render();alert('Backup imported!')}catch(err){alert('That backup file could not be read.')}e.target.value=''});
+$('print').addEventListener('click',()=>window.print());render();
+</script></body></html>
